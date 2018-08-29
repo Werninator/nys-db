@@ -125,7 +125,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Dauer</th>
-                    <th>Läuft ab</th>
+                    <th>Stackbar</th>
                     <th>Skalierung</th>
                     <th>Tick-Effekt</th>
                     <th>End-Effekt</th>
@@ -140,7 +140,7 @@
                         <input type="number" min="1" v-model="el.duration">
                     </td>
                     <td>
-                        <input type="checkbox" v-model="el.descending">
+                        <input type="checkbox" v-model="el.stackable">
                     </td>
                     <td>
                         <div style="float:left; width: 35px; padding: 5px 0;">{{ parseInt(el.powScaling * 100, 10) }}%</div>
@@ -167,7 +167,7 @@
                         </select>
                     </td>
                     <td>
-                        <span v-for="effect in el.onStack">
+                        <span v-for="effect in el.onStack" v-if="el.stackable">
                             <input type="number" v-model="effect.threshold">
                             <select v-model="effect.type">
                                 <option :value="null">-- Bitte auswählen --</option>
@@ -182,7 +182,7 @@
                             </button>
                             <br>
                         </span>
-                        <button @click="addStackEffect(el)">
+                        <button @click="addStackEffect(el)" :disabled="!el.stackable">
                             Stack-Effekt hinzufügen
                         </button>
                     </td>

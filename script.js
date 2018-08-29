@@ -104,7 +104,7 @@
                     id: this.data.buffs.length + 1,
                     name: '',
                     duration: 1,
-                    descending: false,
+                    stackable: false,
                     powScaling: 0.1,
                     onTick: { type: null, buff: null },
                     onEnd: { type: null, buff: null },
