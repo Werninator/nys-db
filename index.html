@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NAME YOUR SPELL DATABASE</title>
+    <script src="vue/dist/vue.js"></script>
+</head>
+<body>
+    <div id="app" style="display: none;">
+        <section style="border-bottom: 1px solid #000; margin-bottom: 10px;">
+            <h1 style="margin: 0">
+                NAME YOUR SPELL DB
+            </h1>
+            <span v-for="page, i in pages"><a href="javascript:void(0)" @click="changePage(page.key)">{{ page.name }}</a> {{ i !== pages.length - 1 ? '-' : '' }} </span>
+            <br>
+            <div style="font-size: .7em; margin-top: 5px;">
+                <a href="javascript:void(0)" @click="saveToBrowser">Speichern</a> -
+                <a href="javascript:localStorage.clear();location.reload();" @click="saveToBrowser">(Clear Storage)</a> -
+                <a :href="downloadString" download="nys-db.json">Download</a> -
+                <a href="javascript:void(0)" @click="onLoadClick">Laden</a>
+                <input type="file" ref="file" @change="onFileLoad" style="display: none;">
+            </div>
+        </section>
+        <h2>{{ page.toUpperCase() }}</h2>
+        <section v-if="page == 'home'">
+            <p>Das ist die Datenbanksoftware von <i>Name Your Spell</i>!</p>
+            <p>Oben kann man zwischen den Dateneinträgen switchen und mit dem Speichern/Laden Link kann man die Datenbank speichern oder laden.</p>
+            <p>Das ist keine permanente Lösung, aber damit kann ich schonmal anfangen die Daten zusammenzutragen</p>
+        </section>
+        <section v-if="page == 'words'">
+            <table border="1" v-if="data[page].length">
+                <tr>
+                    <th>Name</th>
+                    <th>Element</th>
+                    <th>Effekt</th>
+                    <th>Manipulator</th>
+                    <th>Finisher-Ziel</th>
+                    <th>Skalierung</th>
+                    <th></th>
+                </tr>
+                <tr v-for="el, i in data[page]">
+                    <td>
+                        <input type="text" v-model="el.name">
+                    </td>
+                    <td>
+                        <select v-model="el.element">
+                            <option :value="null">-- Bitte auswählen --</option>
+                            <option value="fire">Feuer</option>
+                            <option value="water">Wasser</option>
+                            <option value="earth">Erde</option>
+                            <option value="wind">Wind</option>
+                        </select>
+                    </td>
+                    <td>
+                        <span v-for="effect in el.effects">
+                            <select v-model="effect.type">
+                                <option :value="null">-- Bitte auswählen --</option>
+                                <option v-for="type, prop in effectTypes" :value="prop">{{ type }}</option>
+                            </select>
+                            <select v-model="effect.buff" v-if="effect.type == 'buff'">
+                                <option :value="null">-- Bitte auswählen --</option>
+                                <option v-for="buff in data.buffs" :value="buff.id">{{ buff.name }}</option>
+                            </select>
+                            <button @click="removeEffect(el, effect)">
+                                &times;
+                            </button>
+                            <br>
+                        </span>
+                        <button @click="addEffect(el)">
+                            Effekt hinzufügen
+                        </button>
+                    </td>
+                    <td>
+                        <span v-for="manipulator in el.manipulators">
+                            <select v-model="manipulator.type">
+                                <option :value="null">-- Bitte auswählen --</option>
+                                <option v-for="type, prop in effectTypes" :value="prop">{{ type }}</option>
+                            </select>
+                            <select v-model="manipulator.buff" v-if="manipulator.type == 'buff'">
+                                <option :value="null">-- Bitte auswählen --</option>
+                                <option v-for="buff in data.buffs" :value="buff.id">{{ buff.name }}</option>
+                            </select>
+                            <button @click="removeManipulator(el, manipulator)">
+                                &times;
+                            </button>
+                            <br>
+                        </span>
+                        <button @click="addManipulator(el)">
+                            Manipulator hinzufügen
+                        </button>
+                    </td>
+                    <td>
+                        <select v-model="el.finisherTarget">
+                            <option value="self">Selbst</option>
+                            <option value="team">Team</option>
+                            <option value="single">Gegner (Einzeln)</option>
+                            <option value="aoe">Gegner (Alle)</option>
+                        </select>
+                    </td>
+                    <td>
+                        <span style=>{{ parseInt(el.powScaling * 100, 10) }}%</span>
+                        <input v-model="el.powScaling" type="range" step=".01" min="0" max="1">
+                    </td>
+                    <td>
+                        <button @click="duplicate(page, i)">+</button>
+                        <button @click="swap(page, i, i - 1)" :disabled="i - 1 == -1">&uarr;</button>
+                        <button @click="swap(page, i, i + 1)" :disabled="i + 1 == data[page].length">&darr;</button>
+                        <button @click="remove(page, el)">&times;</button>
+                    </td>
+                </tr>
+            </table>
+            <p v-else>
+                Keine Wörter vorhanden
+            </p>
+            <p>
+                <button @click="addWord">Wort hinzufügen</button>
+            </p>
+        </section>
+        <section v-if="page == 'buffs'">
+            <table border="1" v-if="data[page].length">
+                <tr>
+                    <th>Name</th>
+                    <th></th>
+                </tr>
+                <tr v-for="el in data[page]">
+                    <td>
+                        <input type="text" v-model="el.name">
+                    </td>
+                    <td>
+                        <button @click="remove(page, el)">&times;</button>
+                    </td>
+                </tr>
+            </table>
+            <p v-else>
+                Keine Buffs vorhanden
+            </p>
+            <p>
+                <button @click="addBuff">Buff hinzufügen</button>
+            </p>
+        </section>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
