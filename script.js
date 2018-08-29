@@ -103,7 +103,20 @@
                 this.data.buffs.push({
                     id: this.data.buffs.length + 1,
                     name: '',
+                    duration: 1,
+                    descending: false,
+                    powScaling: 0.1,
+                    onTick: { type: null, buff: null },
+                    onEnd: { type: null, buff: null },
+                    onStack: [],
                 });
+            },
+            addStackEffect: function(buff) {
+                buff.onStack.push({ threshold: 1, type: null, buff: null });
+            },
+            removeStackEffect: function(buff, effect) {
+                var index = buff.onStack.indexOf(effect);
+                if (~index) buff.onStack.splice(index, 1);
             },
         },
         computed: {
