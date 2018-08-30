@@ -5,11 +5,35 @@
     <meta charset="UTF-8">
     <title>NAME YOUR SPELL DATABASE</title>
     <script src="vue/dist/vue.js"></script>
+    <style>
+        input[type="text"] {
+            width: 100px;
+        }
+
+        input[type="number"] {
+            width: 50px;
+        }
+
+        #header {
+            border-bottom: 1px solid #000;
+            margin-bottom: 10px;
+        }
+
+        table {
+            border: 1px solid #000;
+        }
+
+        .scaling-label {
+            float: left;
+            width: 35px;
+            padding: 5px 0;
+        }
+    </style>
 </head>
 
 <body>
     <div id="app" style="display: none;">
-        <section style="border-bottom: 1px solid #000; margin-bottom: 10px;">
+        <section id="header">
             <h1 style="margin: 0">
                 NAME YOUR SPELL DB
             </h1>
@@ -32,7 +56,7 @@
             <p>Das ist keine permanente Lösung, aber damit kann ich schonmal anfangen die Daten zusammenzutragen</p>
         </section>
         <section v-if="page == 'words'">
-            <table border="1" v-if="data[page].length">
+            <table v-if="data[page].length">
                 <tr>
                     <th>Name</th>
                     <th>Element</th>
@@ -49,10 +73,7 @@
                     <td>
                         <select v-model="el.element">
                             <option :value="null">-- Bitte auswählen --</option>
-                            <option value="fire">Feuer</option>
-                            <option value="water">Wasser</option>
-                            <option value="earth">Erde</option>
-                            <option value="wind">Wind</option>
+                            <option v-for="label, prop in elementTypes" :value="prop">{{ label }}</option>
                         </select>
                     </td>
                     <td>
@@ -102,7 +123,7 @@
                         </select>
                     </td>
                     <td>
-                        <div style="float:left; width: 35px; padding: 5px 0;">{{ parseInt(el.powScaling * 100, 10) }}%</div>
+                        <div class="scaling-label">{{ parseInt(el.powScaling * 100, 10) }}%</div>
                         <input v-model="el.powScaling" type="range" step=".01" min="0" max="1">
                     </td>
                     <td>
@@ -121,7 +142,7 @@
             </p>
         </section>
         <section v-if="page == 'buffs'">
-            <table border="1" v-if="data[page].length">
+            <table v-if="data[page].length">
                 <tr>
                     <th>Name</th>
                     <th>Dauer</th>
@@ -143,7 +164,7 @@
                         <input type="checkbox" v-model="el.stackable">
                     </td>
                     <td>
-                        <div style="float:left; width: 35px; padding: 5px 0;">{{ parseInt(el.powScaling * 100, 10) }}%</div>
+                        <div class="scaling-label">{{ parseInt(el.powScaling * 100, 10) }}%</div>
                         <input v-model="el.powScaling" type="range" step=".01" min="0" max="1">
                     </td>
                     <td>
@@ -200,6 +221,105 @@
             <p>
                 <button @click="addBuff">Buff hinzufügen</button>
             </p>
+        </section>
+        <section v-if="page == 'entities'">
+            <table v-if="data[page].length">
+                <tr>
+                    <th>Name</th>
+                    <th>HP</th>
+                    <th>Power</th>
+                    <th>Feuer</th>
+                    <th>Wasser</th>
+                    <th>Erde</th>
+                    <th>Wind</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+                <tr v-for="el, i in data[page]">
+                    <td>
+                        <input type="text" v-model="el.name">
+                    </td>
+                    <td>
+                        <input type="number" min="0" v-model="el.hp">
+                    </td>
+                    <td>
+                        <input type="number" min="0" v-model="el.power">
+                    </td>
+                    <td>
+                        <input type="number" v-model="el.elementalPower.fire">
+                    </td>
+                    <td>
+                        <input type="number" v-model="el.elementalPower.water">
+                    </td>
+                    <td>
+                        <input type="number" v-model="el.elementalPower.wind">
+                    </td>
+                    <td>
+                        <input type="number" v-model="el.elementalPower.earth">
+                    </td>
+                    <td>
+                        <button @click="editEntityKnowledge(el)">
+                            Wortwissen bearbeiten
+                        </button>
+                        <button @click="editEntityInventory(el)">
+                            Inventar bearbeiten
+                        </button>
+                    </td>
+                    <td>
+                        <button @click="duplicate(page, i)">+</button>
+                        <button @click="swap(page, i, i - 1)" :disabled="i - 1 == -1">&uarr;</button>
+                        <button @click="swap(page, i, i + 1)" :disabled="i + 1 == data[page].length">&darr;</button>
+                        <button @click="remove(page, el)">&times;</button>
+                    </td>
+                </tr>
+            </table>
+            <p v-else>
+                Keine Entitäten vorhanden
+            </p>
+            <p>
+                <button @click="addEntity">
+                    Entität hinzufügen
+                </button>
+            </p>
+        </section>
+        <section v-if="page == 'entityKnowledge' && detailItem">
+            <h2>{{ detailItem.name }}'s Wortwissen</h2>
+            <table v-if="detailItem.knowledge.length">
+                <tr>
+                    <th>Wort</th>
+                    <th>Erfahrung</th>
+                    <th></th>
+                </tr>
+                <tr v-for="knowledge, i in detailItem.knowledge">
+                    <td>
+                        <select v-model="knowledge.wordId">
+                            <option :value="null">-- Bitte wählen --</option>
+                            <option v-for="word in data.words" :value="word.id">{{ word.name }}</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="scaling-label">{{ parseInt(knowledge.experience * 100, 10) }}%</div>
+                        <input v-model="knowledge.experience" type="range" step=".01" min="0" max="1">
+                    </td>
+                    <td>
+                        <button @click="removeKnowledge(detailItem, knowledge)">&times;</button>
+                    </td>
+                </tr>
+            </table>
+            <p v-else>
+                Kein Wortwissen vorhanden
+            </p>
+            <p>
+                <button @click="addKnowledge(detailItem)">
+                    Wort hinzufügen
+                </button>
+                <button @click="page = 'entities'">
+                    Zurück zu den Entitäten
+                </button>
+            </p>
+        </section>
+        <section v-if="page == 'entityInventory'">
+
         </section>
     </div>
     <script src="script.js"></script>

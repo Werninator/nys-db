@@ -8,22 +8,34 @@
             var data = {
                 words: [],
                 buffs: [],
+                entities: [],
+                encounters: [],
+                places: [],
+                quests: [],
             };
 
             if (localStorage.nysDb) data = JSON.parse(localStorage.nysDb);
 
             return {
-                page: 'words',
+                page: 'entities',
                 pages: [
                     { key: 'home', name: 'Startseite' },
                     { key: 'words', name: 'Wörter' },
                     { key: 'buffs', name: 'Buffs' },
+                    { key: 'entities', name: 'Entitäten' },
                 ],
                 effectTypes: {
                     damage: 'Schaden',
                     heal: 'Heilung',
                     buff: 'Buff',
                 },
+                elementTypes: {
+                    fire: 'Feuer',
+                    water: 'Wasser',
+                    earth: 'Erde',
+                    wind: 'Wind',
+                },
+                detailItem: null,
                 data: data,
             };
         },
@@ -74,6 +86,7 @@
                 this.swap(prop, this.data[prop].length - 1, i + 1);
             },
             // data methods
+            // WORD
             addWord: function() {
                 this.data.words.push({
                     id: this.data.words.length + 1,
@@ -99,6 +112,7 @@
                 var index = word.manipulators.indexOf(effect);
                 if (~index) word.manipulators.splice(index, 1);
             },
+            // BUFF
             addBuff: function() {
                 this.data.buffs.push({
                     id: this.data.buffs.length + 1,
@@ -117,6 +131,52 @@
             removeStackEffect: function(buff, effect) {
                 var index = buff.onStack.indexOf(effect);
                 if (~index) buff.onStack.splice(index, 1);
+            },
+            // ENTITY
+            addEntity: function() {
+                this.data.entities.push({
+                    id: this.data.entities.length + 1,
+                    name: '',
+                    hp: 0,
+                    power: 0,
+                    elementalPower: {
+                        fire: 10,
+                        water: 10,
+                        earth: 10,
+                        wind: 10,
+                    },
+                    knowledge: [],
+                    inventory: [],
+                });
+            },
+            editEntityKnowledge: function(entity) {
+                this.detailItem = entity;
+                this.page = 'entityKnowledge';
+            },
+            editEntityInventory: function(entity) {
+                this.detailItem = entity;
+                this.page = 'entityInventory';
+            },
+            addKnowledge: function(entity) {
+                entity.knowledge.push({
+                    wordId: null,
+                    experience: 0.5,
+                });
+            },
+            removeKnowledge: function(entity, knowledge) {
+                var index = entity.knowledge.indexOf(knowledge);
+                if (~index) entity.knowledge.splice(index, 1);
+            },
+            addInventoryItem: function(entity) {
+                entity.item.push({
+                    itemId: null,
+                    quantity: 1,
+                    dropChance: 0.5,
+                });
+            },
+            removeInventoryItem: function(entity, item) {
+                var index = entity.inventory.indexOf(item);
+                if (~index) entity.inventory.splice(index, 1);
             },
         },
         computed: {
