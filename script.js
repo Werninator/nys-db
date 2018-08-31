@@ -1,7 +1,7 @@
 (function() {
     'use strict';
 
-    var app = new Vue({
+    new Vue({
         name: 'NYS DATABASE',
         el: '#app',
         data: function() {
@@ -14,7 +14,8 @@
                 quests: [],
             };
 
-            if (localStorage.nysDb) data = JSON.parse(localStorage.nysDb);
+            if (localStorage.getItem('nysDb'))
+                data = JSON.parse(localStorage.getItem('nysDb'));
 
             return {
                 page: 'entities',
@@ -35,6 +36,12 @@
                     earth: 'Erde',
                     wind: 'Wind',
                 },
+                targets: {
+                    self: 'Selbst',
+                    team: 'Team',
+                    single: 'Gegner (Einzeln)',
+                    aoe: 'Gegner (Alle)',
+                },
                 detailItem: null,
                 data: data,
             };
@@ -48,7 +55,13 @@
         methods: {
             // general methods
             saveToBrowser: function() {
-                localStorage.nysDb = JSON.stringify(this.data);
+                this.forceUpdate();
+
+                var vm = this;
+
+                setTimeout(function() {
+                    localStorage.setItem('nysDb', JSON.stringify(vm.data));
+                }, 100);
             },
             changePage: function(page) {
                 this.page = page;
@@ -64,26 +77,34 @@
                 fr.onload = function(e) {
                     vm.data = JSON.parse(e.target.result);
                     vm.saveToBrowser();
+                    vm.page = 'home'
                     vm.$refs.file.value = '';
                 };
 
                 fr.readAsText(files.item(0));
             },
+            forceUpdate: function() {
+                this.data = JSON.parse(JSON.stringify(this.data));
+            },
             swap: function(prop, pos1, pos2) {
-                var toSwap = this.data[prop][pos1];
-                this.data[prop][pos1] = this.data[prop][pos2];
-                this.data[prop][pos2] = toSwap;
-                this.data[prop] = JSON.parse(JSON.stringify(this.data[prop]));
+                this.swapArray(this.data[prop], pos1, pos2);
+            },
+            swapArray: function(arr, pos1, pos2) {
+                var toSwap = arr[pos1];
+                arr[pos1] = arr[pos2];
+                arr[pos2] = toSwap;
+                this.forceUpdate();
             },
             remove: function(prop, el) {
                 var index = this.data[prop].indexOf(el);
                 if (~index) this.data[prop].splice(index, 1);
             },
             duplicate: function(prop, i) {
-                this.data[prop].push(
-                    JSON.parse(JSON.stringify(this.data[prop][i]))
-                );
-                this.swap(prop, this.data[prop].length - 1, i + 1);
+                this.duplicateArray(this.data[prop], i);
+            },
+            duplicateArray: function(arr, i) {
+                arr.push(JSON.parse(JSON.stringify(arr[i])));
+                this.swapArray(arr, arr.length - 1, i + 1);
             },
             // data methods
             // WORD
@@ -99,18 +120,14 @@
                 });
             },
             addEffect: function(word) {
-                word.effects.push({ type: null, buff: null });
-            },
-            removeEffect: function(word, effect) {
-                var index = word.effects.indexOf(effect);
-                if (~index) word.effects.splice(index, 1);
+                word.effects.push({ type: null, buff: null, expert: false });
             },
             addManipulator: function(word) {
-                word.manipulators.push({ type: null, buff: null });
-            },
-            removeManipulator: function(word, effect) {
-                var index = word.manipulators.indexOf(effect);
-                if (~index) word.manipulators.splice(index, 1);
+                word.manipulators.push({
+                    type: null,
+                    buff: null,
+                    expert: false,
+                });
             },
             // BUFF
             addBuff: function() {
@@ -128,10 +145,6 @@
             addStackEffect: function(buff) {
                 buff.onStack.push({ threshold: 1, type: null, buff: null });
             },
-            removeStackEffect: function(buff, effect) {
-                var index = buff.onStack.indexOf(effect);
-                if (~index) buff.onStack.splice(index, 1);
-            },
             // ENTITY
             addEntity: function() {
                 this.data.entities.push({
@@ -146,6 +159,7 @@
                         wind: 10,
                     },
                     knowledge: [],
+                    tactics: [],
                     inventory: [],
                 });
             },
@@ -163,9 +177,22 @@
                     experience: 0.5,
                 });
             },
-            removeKnowledge: function(entity, knowledge) {
-                var index = entity.knowledge.indexOf(knowledge);
-                if (~index) entity.knowledge.splice(index, 1);
+            addTactic: function(entity) {
+                entity.tactics.push({
+                    words: [],
+                    hpThreshold: 0.5,
+                    conditions: [],
+                });
+            },
+            addTacticWord: function(tactic) {
+                tactic.words.push({ wordId: null });
+            },
+            addTacticCondition: function(tactic) {
+                tactic.conditions.push({
+                    type: null,
+                    buffId: null,
+                    target: null,
+                });
             },
             addInventoryItem: function(entity) {
                 entity.item.push({
@@ -173,10 +200,6 @@
                     quantity: 1,
                     dropChance: 0.5,
                 });
-            },
-            removeInventoryItem: function(entity, item) {
-                var index = entity.inventory.indexOf(item);
-                if (~index) entity.inventory.splice(index, 1);
             },
         },
         computed: {

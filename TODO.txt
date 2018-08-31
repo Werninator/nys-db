@@ -1,0 +1,3 @@
+- [x] Taktiken für die Gegner anlegen können
+    - [ ] Konditionen (Ideen): Buff BUFF auf TARGET, getting targetted, teammate getting targetted,
+- [ ] Items & Inventar

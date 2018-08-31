@@ -42,7 +42,8 @@
             <br>
             <div style="font-size: .7em; margin-top: 5px;">
                 <a href="javascript:void(0)" @click="saveToBrowser">Speichern</a> -
-                <a href="javascript:localStorage.clear();location.reload();" @click="saveToBrowser">(Clear Storage)</a> -
+                <a href="javascript:localStorage.clear(); location.reload();" @click="saveToBrowser">(Clear Storage)</a>
+                -
                 <a :href="downloadString" download="nys-db.json">Download</a> -
                 <a href="javascript:void(0)" @click="onLoadClick">Laden</a>
                 <input type="file" ref="file" @change="onFileLoad" style="display: none;">
@@ -77,7 +78,11 @@
                         </select>
                     </td>
                     <td>
-                        <span v-for="effect in el.effects">
+                        <span v-for="effect, i in el.effects">
+                            <button @click="el.effects.splice(i, 1)">
+                                &times;
+                            </button>
+                            <input type="checkbox" v-model="effect.expert">
                             <select v-model="effect.type">
                                 <option :value="null">-- Bitte auswählen --</option>
                                 <option v-for="type, prop in effectTypes" :value="prop">{{ type }}</option>
@@ -86,9 +91,6 @@
                                 <option :value="null">-- Bitte auswählen --</option>
                                 <option v-for="buff in data.buffs" :value="buff.id">{{ buff.name }}</option>
                             </select>
-                            <button @click="removeEffect(el, effect)">
-                                &times;
-                            </button>
                             <br>
                         </span>
                         <button @click="addEffect(el)">
@@ -96,7 +98,11 @@
                         </button>
                     </td>
                     <td>
-                        <span v-for="manipulator in el.manipulators">
+                        <span v-for="manipulator, i in el.manipulators">
+                            <button @click="el.manipulators.splice(i, 1)">
+                                &times;
+                            </button>
+                            <input type="checkbox" v-model="manipulator.expert">
                             <select v-model="manipulator.type">
                                 <option :value="null">-- Bitte auswählen --</option>
                                 <option v-for="type, prop in effectTypes" :value="prop">{{ type }}</option>
@@ -105,9 +111,6 @@
                                 <option :value="null">-- Bitte auswählen --</option>
                                 <option v-for="buff in data.buffs" :value="buff.id">{{ buff.name }}</option>
                             </select>
-                            <button @click="removeManipulator(el, manipulator)">
-                                &times;
-                            </button>
                             <br>
                         </span>
                         <button @click="addManipulator(el)">
@@ -116,10 +119,7 @@
                     </td>
                     <td>
                         <select v-model="el.finisherTarget">
-                            <option value="self">Selbst</option>
-                            <option value="team">Team</option>
-                            <option value="single">Gegner (Einzeln)</option>
-                            <option value="aoe">Gegner (Alle)</option>
+                            <option v-for="label, prop in targets" :value="prop">{{ label }}</option>
                         </select>
                     </td>
                     <td>
@@ -188,7 +188,10 @@
                         </select>
                     </td>
                     <td>
-                        <span v-for="effect in el.onStack" v-if="el.stackable">
+                        <span v-for="effect, i in el.onStack" v-if="el.stackable">
+                            <button @click="el.onStack.splice(i, 1)">
+                                &times;
+                            </button>
                             <input type="number" v-model="effect.threshold">
                             <select v-model="effect.type">
                                 <option :value="null">-- Bitte auswählen --</option>
@@ -198,9 +201,6 @@
                                 <option :value="null">-- Bitte auswählen --</option>
                                 <option v-for="buff in data.buffs" :value="buff.id">{{ buff.name }}</option>
                             </select>
-                            <button @click="removeStackEffect(el, effect)">
-                                &times;
-                            </button>
                             <br>
                         </span>
                         <button @click="addStackEffect(el)" :disabled="!el.stackable">
@@ -283,6 +283,9 @@
             </p>
         </section>
         <section v-if="page == 'entityKnowledge' && detailItem">
+            <button @click="page = 'entities'">
+                Zurück zu den Entitäten
+            </button>
             <h2>{{ detailItem.name }}'s Wortwissen</h2>
             <table v-if="detailItem.knowledge.length">
                 <tr>
@@ -302,7 +305,7 @@
                         <input v-model="knowledge.experience" type="range" step=".01" min="0" max="1">
                     </td>
                     <td>
-                        <button @click="removeKnowledge(detailItem, knowledge)">&times;</button>
+                        <button @click="detailItem.knowledge.splice(i, 1)">&times;</button>
                     </td>
                 </tr>
             </table>
@@ -313,13 +316,78 @@
                 <button @click="addKnowledge(detailItem)">
                     Wort hinzufügen
                 </button>
-                <button @click="page = 'entities'">
-                    Zurück zu den Entitäten
+            </p>
+            <h2>Taktiken</h2>
+            <table v-if="detailItem.tactics.length">
+                <tr>
+                    <th>Wörter</th>
+                    <th>HP Schwelle</th>
+                    <th>Konditionen</th>
+                    <th></th>
+                </tr>
+                <tr v-for="tactic, i in detailItem.tactics">
+                    <td>
+                        <span v-for="word, i in tactic.words">
+                            <select v-model="word.wordId">
+                                <option :value="null">-- Bitte auswählen --</option>
+                                <option v-for="word in data.words" :value="word.id">{{ word.name }}</option>
+                            </select>
+                            <button @click="swapArray(tactic.words, i, i - 1)" :disabled="i - 1 == -1">&uarr;</button>
+                            <button @click="swapArray(tactic.words, i, i + 1)" :disabled="i + 1 == tactic.words.length">&darr;</button>
+                            <button @click="tactic.words.splice(i, 1);">&times; </button>
+                            <br>
+                        </span>
+                        <button @click="addTacticWord(tactic)">
+                            Wort hinzufügen
+                        </button>
+                    </td>
+                    <td>
+                        <div class="scaling-label">{{ parseInt(tactic.hpThreshold * 100, 10) }}%</div>
+                        <input v-model="tactic.hpThreshold" type="range" step=".01" min="0" max="1">
+                    </td>
+                    <td>
+                        <span v-for="condition, i in tactic.conditions">
+                            <button @click="tactic.conditions.splice(i, 1)">
+                                &times;
+                            </button>
+                            <select v-model="condition.type">
+                                <option :value="null">-- Bitte auswählen --</option>
+                                <option value="buff">Folgender Buff auf</option>
+                                <option value="target">Anvisierung auf</option>
+                            </select>
+                            <select v-model="condition.buffId" v-if="condition.type == 'buff'">
+                                <option :value="null">-- Bitte auswählen --</option>
+                                <option v-for="buff in data.buffs" :value="buff.id">{{ buff.name }}</option>
+                            </select>
+                            <select v-model="condition.target" v-if="condition.type == 'buff' || condition.type == 'target'">
+                                <option :value="null">-- Bitte auswählen --</option>
+                                <option v-for="label, prop in targets" :value="prop">{{ label }}</option>
+                            </select>
+                            <br>
+                        </span>
+                        <button @click="addTacticCondition(tactic)">
+                            Kondition hinzufügen
+                        </button>
+                    </td>
+                    <td>
+                        <button @click="duplicateArray(detailItem.tactics, i)">+</button>
+                        <button @click="swapArray(detailItem.tactics, i, i - 1)" :disabled="i - 1 == -1">&uarr;</button>
+                        <button @click="swapArray(detailItem.tactics, i, i + 1)" :disabled="i + 1 == detailItem.tactics.length">&darr;</button>
+                        <button @click="detailItem.tactics.splice(i, 1)">&times;</button>
+                    </td>
+                </tr>
+            </table>
+            <p v-else>
+                Keine Taktiken verfügbar
+            </p>
+            <p>
+                <button @click="addTactic(detailItem)">
+                    Taktik hinzufügen
                 </button>
             </p>
         </section>
         <section v-if="page == 'entityInventory'">
-
+            Nothing here (yet)
         </section>
     </div>
     <script src="script.js"></script>
